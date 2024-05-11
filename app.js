@@ -69,6 +69,21 @@ app.get('/tickets/:project', async (req, res) => {
         res.status(500).json({ message: 'Erreur lors de la récupération des tickets par projet' });
     }
 });
+//Récupérer les sprints d'un projet spécifique 
+app.get('/projects/:project/sprints', async (req, res) => {
+    const project = req.params.project;
+  
+    try {
+      const Sprint = mongoose.connection.db.collection('Sprint');
+      const sprints = await Sprint.find({ Nom_Projet: project }).toArray();
+  
+      res.json(sprints);
+    } catch (err) {
+      console.error('Erreur lors de la récupération des sprints', err);
+      res.status(500).json({ message: 'Erreur lors de la récupération des sprints depuis MongoDB' });
+    }
+  });
+  
 //CALCUL NOMBRE TICKETS ESTIMES ET NON ESTIMES
 app.get('/tickets/:project/kpi', async (req, res) => {
     try {
@@ -106,7 +121,9 @@ app.get('/tickets/:project/kpi/estimated-time', async (req, res) => {
             { $match: { Clé_Projet: project, Temps_Estimé: { $ne: 0 } } },
             { $group: { _id: "$Clé_Projet", totalEstimatedTime: { $sum: "$Temps_Estimé" } } }
         ]).toArray();
-        
+        totalEstimatedTime.forEach(entry => {
+            entry.totalEstimatedTime = Math.round(entry.totalEstimatedTime * 100) / 100;
+        });
         res.json(totalEstimatedTime);
     } catch (err) {
         console.error('Erreur lors du calcul du KPI de temps estimé pour le projet :', err);
@@ -135,7 +152,7 @@ app.get('/tickets/:project/kpi/by-type', async (req, res) => {
     }
 });
 
-//CHARGE TICKETS ESTIMES PAR TYPE
+//CALCUL CHARGE TICKETS ESTIMES PAR TYPE
 app.get('/tickets/:project/kpi/estimated-time-by-type', async (req, res) => {
     try {
         const project = req.params.project;
@@ -177,7 +194,7 @@ app.get('/tickets/:project/kpi/by-statut', async (req, res) => {
     }
 });
 
-//CALCUL DU NOMBRE DES TICKETS ESTIME PAR STATUT
+//CALCUL CHARGE TICKETS ESTIMES PAR STATUT
 app.get('/tickets/:project/kpi/estimated-time-by-statut', async (req, res) => {
     try {
         const project = req.params.project;
@@ -247,27 +264,28 @@ app.get('/project/:project/velocity', async (req, res) => {
         const project = req.params.project;
         const Ticket = mongoose.connection.db.collection('Ticket');
         
-        const tickets = await Ticket.find({ Clé_Projet: project }).toArray();
+        const uniqueSprints = await Ticket.distinct("Nom_sprint", { Clé_Projet: project, Nom_sprint: { $ne: "Pas de sprint" } });
+
+        const velocities = [];
+
+        for (const sprint of uniqueSprints) {
+            const totalStoryPoints = await Ticket.aggregate([
+                { $match: { Clé_Projet: project, Nom_sprint: sprint } },
+                { $group: { _id: null, totalStoryPoints: { $sum: "$Story_Point" } } }
+            ]).toArray();
+            const sumStoryPoints = totalStoryPoints.length > 0 ? totalStoryPoints[0].totalStoryPoints : 0;
+            
+            const velocity = { sprint, velocity: sumStoryPoints };
+            velocities.push(velocity);
+        }
         
-        
-        const uniqueSprints = await Ticket.distinct("Nom_sprint", { Clé_Projet: project });
-        const numberOfSprints = uniqueSprints.length;
-        
-        const totalStoryPoints = await Ticket.aggregate([
-            { $match: { Clé_Projet: project } },
-            { $group: { _id: null, totalStoryPoints: { $sum: "$Story_Point" } } }
-        ]).toArray();
-        const sumStoryPoints = totalStoryPoints.length > 0 ? totalStoryPoints[0].totalStoryPoints : 0;
-        
-   
-        const velocity = numberOfSprints > 0 ? sumStoryPoints / numberOfSprints : 0;
-        
-        res.json({ numberOfSprints, velocity });
+        res.json(velocities);
     } catch (err) {
         console.error('Erreur lors du calcul de la vélocité agile pour le projet :', err);
         res.status(500).json({ message: 'Erreur lors du calcul de la vélocité agile pour le projet' });
     }
 });
+
 
 //CALCUL CHARGE CONSOMMEE % CHARGE ESTIME
 app.get('/project/:project/timeRatio', async (req, res) => {
@@ -302,7 +320,7 @@ app.get('/project/:project/timeRatio', async (req, res) => {
        
         const percentage = (totalTempsConsommé / totalTempsEstimé) * 100;
         
-        res.json({ totalTempsConsommé, totalTempsEstimé, percentage });
+        res.json({ percentage });
     } catch (err) {
         console.error('Erreur lors du calcul du ratio de temps pour le projet :', err);
         res.status(500).json({ message: 'Erreur lors du calcul du ratio de temps pour le projet' });
@@ -348,7 +366,7 @@ app.get('/project/:project/effortRatio', async (req, res) => {
         ]).toArray();
        
         const percentage = (PointEffortTraites / totalProjectStoryPoints[0].totalStoryPoints) * 100;
-        
+        const Per = Math.round(percentage, 2)
         res.json({ PointEffortTraites, percentage });
     } catch (err) {
         console.error('Erreur lors du calcul du ratio de temps pour le projet :', err);
@@ -386,9 +404,8 @@ app.get('/project/:project/timeEffortRatio', async (req, res) => {
         
         const { totalTempsEstimé, totalStoryPoints } = result[0];
         
-        // Calculer le ratio du temps estimé par rapport aux points d'effort
-        const ratio = (totalTempsEstimé / totalStoryPoints);
-        
+        const SPVsCharge = (totalTempsEstimé / totalStoryPoints);
+        const ratio = Math.round(SPVsCharge,2)
         res.json({ ratio });
     } catch (err) {
         console.error('Erreur lors du calcul du ratio temps/effort pour le projet :', err);
@@ -437,8 +454,8 @@ app.get('/project/:project/bugTicketsTimeConsumed', async (req, res) => {
         ]).toArray();
         
         const totalTempsConsommé = result.length > 0 ? result[0].totalTempsConsommé : 0;
-        
-        res.json({ totalTempsConsommé });
+        const totalTempsConsomme = Math.round(totalTempsConsommé,2)
+        res.json({ totalTempsConsomme });
     } catch (err) {
         console.error('Erreur lors du calcul du temps consommé pour les tickets de type "Bug" pour le projet :', err);
         res.status(500).json({ message: 'Erreur lors du calcul du temps consommé pour les tickets de type "Bug" pour le projet' });
@@ -451,10 +468,14 @@ app.get('/project/:project/timeConsumRatio', async (req, res) => {
         const project = req.params.project;
         const Ticket = mongoose.connection.db.collection('Ticket');
         
+        // Filtre pour sélectionner les tickets de types spécifiques
         const matchFilter = {
             Clé_Projet: project,
+            Type_Ticket: { $in: ["Bug", "Bogue", "Bug Sub Task"] }, // Ajoutez les types de ticket spécifiques ici
             $or: [{ Temps_Consommé: { $gt: 0 } }, { Temps_Estimé: { $gt: 0 } }]
         };
+
+        console.log("Filter here ",matchFilter)
         
         const result = await Ticket.aggregate([
             { $match: matchFilter },
@@ -462,8 +483,20 @@ app.get('/project/:project/timeConsumRatio', async (req, res) => {
                 $group: {
                     _id: null,
                     totalTempsConsommé: { $sum: "$Temps_Consommé" },
-                    totalTempsEstimé: { $sum: "$Temps_Estimé" }
                 }
+            },
+            {
+                $lookup: {
+                    from: "Ticket",
+                    pipeline: [
+                        { $match: { Clé_Projet: project, $or: [{ Temps_Consommé: { $gt: 0 } }, { Temps_Estimé: { $gt: 0 } }] } },
+                        { $group: { _id: null, totalTempsEstimé: { $sum: "$Temps_Estimé" } } }
+                    ],
+                    as: "totalTempsEstimé"
+                }
+            },
+            {
+                $unwind: "$totalTempsEstimé"
             }
         ]).toArray();
         
@@ -474,14 +507,15 @@ app.get('/project/:project/timeConsumRatio', async (req, res) => {
         const { totalTempsConsommé, totalTempsEstimé } = result[0];
         
         // Calcul du ratio en pourcentage
-        const ratioPercentage = (totalTempsConsommé / totalTempsEstimé) * 100;
-        
-        res.json({ totalTempsConsommé, totalTempsEstimé, ratioPercentage });
+        const ratioPercentage = (totalTempsConsommé / totalTempsEstimé.totalTempsEstimé) * 100;
+       const Percentage = Math.round(ratioPercentage, 2);
+        res.json({ totalTempsConsommé, totalTempsEstimé: totalTempsEstimé.totalTempsEstimé,Percentage });
     } catch (err) {
         console.error('Erreur lors du calcul du ratio de consommation de temps pour le projet :', err);
         res.status(500).json({ message: 'Erreur lors du calcul du ratio de consommation de temps pour le projet' });
     }
 });
+
 
 //CALCULER BUG GENERE PAR EFFORT DE DEVELOPPEMENT
 app.get('/project/:project/bugEffortDevRatio', async (req, res) => {
@@ -508,12 +542,12 @@ app.get('/project/:project/bugEffortDevRatio', async (req, res) => {
         ]).toArray();
         
         if (bugTickets.length === 0 || storyTickets.length === 0) {
-            return res.json({});
+            return res.json({bugEffortRatio: 0});
         }
         
         const bugEffortRatio = bugTickets[0].totalBugTickets / storyTickets[0].totalStoryPoints;
-        
-        res.json({ bugEffortRatio });
+        const bugEffort = Math.round(bugEffortRatio, 2)
+        res.json({ bugEffort });
     } catch (err) {
         console.error('Erreur lors du calcul du ratio d\'effort pour les bugs pour le projet :', err);
         res.status(500).json({ message: 'Erreur lors du calcul du ratio d\'effort pour les bugs pour le projet' });
@@ -578,13 +612,13 @@ app.get('/project/:project/timeConsumedRatio', async (req, res) => {
             }
         ]).toArray();
         
-        // Trouver la somme du temps consommé pour les tickets de type Bug
+      
         const bugTimeConsumed = tickets.find(ticket => ticket._id !== "Story")?.totalTempsConsommé || 0;
         
-        // Trouver la somme du temps consommé pour les tickets de type Story
+        
         const storyTimeConsumed = tickets.find(ticket => ticket._id === "Story")?.totalTempsConsommé || 0;
         
-        // Calculer le ratio en pourcentage
+      
         const ratio = (bugTimeConsumed / storyTimeConsumed) * 100 || 0;
         
         res.json({ ratio });
@@ -647,13 +681,38 @@ app.get('/project/:project/timeRatio', async (req, res) => {
         const tempsEstimé = totalTempsEstimé.length > 0 ? totalTempsEstimé[0].total : 0;
         
       
-        const ratio = tempsConsommé / tempsEstimé || 0;
+        const ratio = (tempsConsommé / tempsEstimé)*100 || 0;
         res.json({ ratio });
     } catch (err) {
         console.error('Erreur lors du calcul du ratio de temps pour le projet :', err);
         res.status(500).json({ message: 'Erreur lors du calcul du ratio de temps pour le projet' });
     }
 });
+
+//_______________________KPI_Par_Sprint___________________________
+//CALCUL VELOCITY SPRINT 
+app.get('/tickets/:project/kpi/tickets-per-sprint', async (req, res) => {
+    try {
+        const project = req.params.project;
+        const Ticket = mongoose.connection.db.collection('Ticket');
+        
+      
+        const tickets = await Ticket.find({ Clé_Projet: project }).toArray();
+        
+
+        const ticketsPerSprint = await Ticket.aggregate([
+            { $match: { Clé_Projet: project, Nom_sprint: { $ne: "pas de sprint" } } }, 
+            { $group: { _id: "$Nom_sprint", count: { $sum: 1 } } }
+        ]).toArray();
+        
+        res.json(ticketsPerSprint);
+    } catch (err) {
+        console.error('Erreur lors du calcul du nombre de tickets par sprint pour le projet :', err);
+        res.status(500).json({ message: 'Erreur lors du calcul du nombre de tickets par sprint pour le projet' });
+    }
+});
+
+
 
 
 

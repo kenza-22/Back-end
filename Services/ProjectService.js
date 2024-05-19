@@ -1,6 +1,6 @@
 const axios = require('axios');
-
-exports.getProjects = async (username, password, domain) => {
+const mongoose = require('mongoose');
+const getProjects = async (username, password, domain) => {
   try {
     const baseUrl = 'https://' + domain + '.atlassian.net';
 
@@ -23,3 +23,14 @@ exports.getProjects = async (username, password, domain) => {
     throw error;
   }
 };
+
+const GetAllProjetsdb = async () => {
+  try {
+    const Projet = mongoose.connection.db.collection('Projet');
+    const projets = await Projet.find({}).toArray();
+    return projets;
+  } catch (err) {
+    throw err;
+  }
+};
+module.exports={GetAllProjetsdb, getProjects}

@@ -1,8 +1,12 @@
 const axios = require("axios");
 const fs = require("fs").promises;
 const path = require("path");
+const schedule = require('node-schedule');
+const mongoose = require('mongoose');
 // job cron qui se lance vers 00:00 chaque 2 semaines
-
+// const job = schedule.scheduleJob('0 0 * * *', () => {
+//   console.log("Le job cron se lance chaque jour à minuit");
+// });
 const getTotalIssuesCount = async (baseUrl, auth) => {
   const config = {
     method: "get",
@@ -17,7 +21,7 @@ const getTotalIssuesCount = async (baseUrl, auth) => {
   const response = await axios.request(config);
   return response.data.total;
 };
-exports.getIssues = async (username, password, domain) => {
+const getIssues = async (username, password, domain) => {
   try {
     const dataFile = path.join(__dirname, "../db/issues/db.json");
 
@@ -78,3 +82,24 @@ exports.getIssues = async (username, password, domain) => {
     throw error;
   }
 };
+const GetAllTicketsdb = async () => {
+  try {
+    const Ticket = mongoose.connection.db.collection('Ticket');
+    const tickets = await Ticket.find({}).toArray();
+    return tickets;
+  } catch (err) {
+    throw err;
+  }
+};
+
+const GetTicketsByProject = async (project) => {
+  try {
+    const Ticket = mongoose.connection.db.collection('Ticket');
+    const tickets = await Ticket.find({ Clé_Projet: project }).toArray();
+    return tickets;
+  } catch (err) {
+    throw err;
+  }
+};
+
+module.exports={getTotalIssuesCount, getIssues, GetAllTicketsdb, GetTicketsByProject}

@@ -2,7 +2,7 @@ const projectsService = require('../Services/ProjectService');
 require('dotenv').config();
 const fs = require('fs');
 
-exports.getProjects = async (req, res) => {
+const getProjects = async (req, res) => {
   try {
     const { ATLASSIAN_USERNAME, ATLASSIAN_API_KEY, DOMAIN } = process.env;
     const projects = await projectsService.getProjects(ATLASSIAN_USERNAME, ATLASSIAN_API_KEY, DOMAIN);
@@ -21,6 +21,14 @@ exports.getProjects = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-
+const getProjetsdb = async (req, res) => {
+  try {
+    const projets = await projectsService.GetAllProjetsdb();
+    res.json(projets);
+  } catch (err) {
+    console.error('Erreur lors de la récupération des données', err);
+    res.status(500).json({ message: 'Erreur lors de la récupération des données depuis MongoDB' });
+  }
+};
+module.exports={getProjects, getProjetsdb}
 

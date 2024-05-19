@@ -1,6 +1,6 @@
 const axios = require("axios");
-
-exports.getSprints = async (username, password, domain) => {
+const mongoose = require('mongoose');
+const getSprints = async (username, password, domain) => {
   try {
     const baseUrl = "https://" + domain + ".atlassian.net";
     const auth = {
@@ -151,3 +151,13 @@ exports.getSprints = async (username, password, domain) => {
     throw error;
   }
 };
+const GetAllSprints = async () => {
+  try {
+    const Sprint = mongoose.connection.db.collection('Sprint');
+    const sprints = await Sprint.find({}).toArray();
+    return sprints;
+  } catch (error) {
+    throw error;
+  }
+};
+module.exports={GetAllSprints, getSprints}

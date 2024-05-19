@@ -33,7 +33,7 @@ function writeJsonFiles(issuesByKeys) {
   for (const key in issuesByKeys) {
     if (issuesByKeys.hasOwnProperty(key)) {
       const issues = issuesByKeys[key];
-      const jsonData = JSON.stringify(issues, null, 2); // Convert issues array to JSON format with pretty printing
+      const jsonData = JSON.stringify(issues, null, 2); // Conversion du table des tickets en JSON format 
 
       const filename = path.join(exportDir, `${key}.json`); // Create full file path based on the key and export directory
       fs.writeFileSync(filename, jsonData); // Write JSON data to file
@@ -42,7 +42,7 @@ function writeJsonFiles(issuesByKeys) {
   }
 }
 
-exports.getIssues = async (req, res) => {
+const getIssues = async (req, res) => {
   try {
     const { ATLASSIAN_USERNAME, ATLASSIAN_API_KEY, DOMAIN } = process.env;
     const issues = await issuesService.getIssues(
@@ -74,3 +74,23 @@ exports.getIssues = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+const GetTicketsdb = async (req, res) => {
+  try {
+    const tickets = await issuesService.GetAllTicketsdb();
+    res.json(tickets);
+  } catch (err) {
+    console.error('Erreur lors de la récupération des données', err.message);
+    res.status(500).json({ message: 'Erreur lors de la récupération des données depuis MongoDB', details: err.message });
+  }
+};
+const GetTicketsByProject = async (req, res) => {
+  try {
+    const project = req.params.project;
+    const tickets = await issuesService.GetTicketsByProject(project);
+    res.json(tickets);
+  } catch (err) {
+    console.error('Erreur lors de la récupération des tickets par projet :', err.message);
+    res.status(500).json({ message: 'Erreur lors de la récupération des tickets par projet' });
+  }
+};
+module.exports={getIssues, GetTicketsdb, GetTicketsByProject}

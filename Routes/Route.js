@@ -19,16 +19,16 @@ router.get('/group',GroupController.GetAllGroups );
 router.get('/group/members/:GroupId',GroupController.GetGroupMembers);
 router.delete('/group/:GroupId', GroupController.DeleteGroup);
 //_________________API__From__DB__________________________//
-router.get('/issues', IssuesController.getIssues);
 router.get('/issuesdb', IssuesController.GetTicketsdb);
+router.get('/sprintsdb', SprintsController.GetSprintsdb);
+router.get('/projectsdb', ProjectsController.getProjetsdb);
 router.get('/issues/:project', IssuesController.GetTicketsByProject);
+//_________________API__From__JIRA__________________________//
+router.get('/issues', IssuesController.getIssues);
 router.get('/projects', ProjectsController.getProjects);
-router.get('/projectsdb', ProjectsController.getProjetsdb)
 router.get('/sprints', SprintsController.getAllSprints);
-router.get('/sprintsdb', SprintsController.GetSprintsdb);
-router.get('/sprintsdb', SprintsController.GetSprintsdb);
 //______________API__KPI________________________//
-//CALCULER TICKETS ESTIMés ET NON ESTIMés
+//CALCULER TICKETS ESTIMEs ET NON ESTIMEs
 router.get('/tickets/:project/kpi', KPIController.getTicketKPIForProject);
 //CALCUL CHARGE TICKETS ESTIMES
 router.get('/tickets/:project/kpi/estimated-time', KPIController.getTotalEstimatedTimeForProject);

@@ -213,7 +213,7 @@ const getStoryCompletionRatio = async (req, res) => {
 const getTimeRatioForProject = async (req, res) => {
     try {
         const project = req.params.project;
-        const ratio = await projectService.calculateTimeRatioForProject(project);
+        const ratio = await KPIService.calculateTimeRatioForProject(project);
         res.json(ratio);
     } catch (error) {
         console.error('Erreur lors du calcul du ratio de temps pour le projet :', error.message);

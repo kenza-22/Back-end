@@ -244,7 +244,7 @@ const getEffortRatioForProject = async (project) => {
         }
 
         const percentage = (PointEffortTraites / totalProjectStoryPoints[0].totalStoryPoints) * 100;
-        const roundedPercentage = Math.round(percentage * 100) / 100; // Round to two decimal places
+        const roundedPercentage = Math.round(percentage * 100) / 100; 
 
         return { PointEffortTraites, percentage: roundedPercentage };
     } catch (error) {
@@ -281,7 +281,7 @@ const calculateTimeEffortRatio = async (project) => {
   
       const { totalTempsEstimé, totalStoryPoints } = result[0];
       const SPVsCharge = totalTempsEstimé / totalStoryPoints;
-      const ratio = Math.round(SPVsCharge * 100) / 100; // Utilisez toFixed(2) pour arrondir à 2 décimales
+      const ratio = Math.round(SPVsCharge * 100) / 100; 
   
       return { ratio };
     } catch (error) {
@@ -313,7 +313,7 @@ const calculateBugTicketsTimeConsumed = async (project) => {
         const matchFilter = {
             Clé_Projet: project,
             Type_Ticket: { $in: ["Bug", "Bug Sub Task", "Bogue"] },
-            Temps_Consommé: { $gt: 0 } // Filtre pour les tickets ayant un temps consommé supérieur à zéro
+            Temps_Consommé: { $gt: 0 } 
         };
         
         const result = await Ticket.aggregate([

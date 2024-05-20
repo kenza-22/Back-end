@@ -14,7 +14,7 @@ app.listen(5000, (err) => {
         console.log(`Server started`);
     }
 });
-mongoose.connect("mongodb://127.0.0.1:27017/Project_Jira")
+mongoose.connect("mongodb://127.0.0.1:27017/Projet_Jira")
     .then(() => {
         console.log("Successfully Connected to DB");
     })

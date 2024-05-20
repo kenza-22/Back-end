@@ -5,38 +5,37 @@ require("dotenv").config();
 //grouper les tickets par clé projet
 async function groupIssuesByKey(issues) {
   const grouped = {};
-
+  console.log('im here')
   issues.forEach((issue) => {
     console.log(`project key ${issue.fields?.project?.key}`);
-    const projectKey = issue.fields?.project?.key; // Safely access project key
+    const projectKey = issue.fields?.project?.key; 
     if (projectKey && projectKey !== "WTM" && projectKey && projectKey !== "INT") {
       if (!grouped[projectKey]) {
-        grouped[projectKey] = []; // Initialize the array if it doesn't exist
+        grouped[projectKey] = []; 
       }
-      grouped[projectKey].push(issue); // Push the issue into the corresponding group
+      grouped[projectKey].push(issue);
     }
   });
 
   return grouped;
 }
-//construire un dossier et mettre les tickets par clé projet
-function writeJsonFiles(issuesByKeys) {
-  const exportDir = path.join(__dirname, "../exports/issues"); // Define the export directory path
 
-  // Ensure the export directory exists, if not, create it
+function writeJsonFiles(issuesByKeys) {
+  const exportDir = path.join(__dirname, "../exports/issues"); 
+
+  
   if (!fs.existsSync(exportDir)) {
     fs.mkdirSync(exportDir, { recursive: true });
     console.log(`Directory ${exportDir} created.`);
   }
 
-  // extract data to json file by project key
   for (const key in issuesByKeys) {
     if (issuesByKeys.hasOwnProperty(key)) {
       const issues = issuesByKeys[key];
-      const jsonData = JSON.stringify(issues, null, 2); // Conversion du table des tickets en JSON format 
+      const jsonData = JSON.stringify(issues, null, 2); 
 
-      const filename = path.join(exportDir, `${key}.json`); // Create full file path based on the key and export directory
-      fs.writeFileSync(filename, jsonData); // Write JSON data to file
+      const filename = path.join(exportDir, `${key}.json`); 
+      fs.writeFileSync(filename, jsonData); 
       console.log(`File ${filename} created successfully.`);
     }
   }
@@ -61,16 +60,13 @@ const getIssues = async (req, res) => {
     const filename = path.join(exportDir, `db.json`); // Create full file path based on the key and export directory
     fs.writeFileSync(filename, jsonData);  */
     // Ensure the export directory exists, if not, create it
-    //console.log(issues);
+  
     const groupedIssues = await groupIssuesByKey(issues);
-
-    console.log("finish Group By");
-
     await writeJsonFiles(groupedIssues);
     res.json(true);
+    
   } catch (error) {
     console.log("Error exporting group:", error);
-    // console.log("error: ", error);
     res.status(500).json({ error: error.message });
   }
 };

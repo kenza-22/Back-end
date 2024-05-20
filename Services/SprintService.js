@@ -1,5 +1,9 @@
 const axios = require("axios");
 const mongoose = require('mongoose');
+const schedule = require("node-schedule");
+const job = schedule.scheduleJob('0 0 */15 * *', () => {
+  getSprints(username, password, domain)
+ });
 const getSprints = async (username, password, domain) => {
   try {
     const baseUrl = "https://" + domain + ".atlassian.net";
@@ -40,8 +44,6 @@ const getSprints = async (username, password, domain) => {
       // Récupérer les sprints de chaque tableau
        for (const board of boards) {
         switch (board.id) {
-          //case 172:
-          //case 180:
           case 173:
           case 8:
           case 9:

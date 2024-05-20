@@ -51,15 +51,7 @@ const getIssues = async (req, res) => {
     );
     console.log("done get issues");
     console.log("start Group By");
-    /*      const exportDir = path.join(__dirname, "../db/issues");
-    if (!fs.existsSync(exportDir)) {
-      fs.mkdirSync(exportDir, { recursive: true });
-      console.log(`Directory ${exportDir} created.`);
-    }
-    const jsonData = JSON.stringify(issues, null, 2); // Convert issues array to JSON format with pretty printing
-    const filename = path.join(exportDir, `db.json`); // Create full file path based on the key and export directory
-    fs.writeFileSync(filename, jsonData);  */
-    // Ensure the export directory exists, if not, create it
+ 
   
     const groupedIssues = await groupIssuesByKey(issues);
     await writeJsonFiles(groupedIssues);
